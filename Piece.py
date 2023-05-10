@@ -171,6 +171,7 @@ class Knight(Piece):
             # when the square with new_row and new_col contains a valid piece and the player is different
             if game_state.is_valid_piece(new_row, new_col) and self.get_player() is not evaluating_square.get_player():
                 _moves.append((new_row, new_col))
+
         return _moves
 
     def get_valid_piece_moves(self, game_state):
