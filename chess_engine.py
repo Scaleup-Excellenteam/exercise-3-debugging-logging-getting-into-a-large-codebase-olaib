@@ -4,6 +4,8 @@
 #
 # Note: move log class inspired by Eddie Sharick
 #
+import numpy as np
+
 from Piece import Rook, Knight, Bishop, Queen, King, Pawn
 from enums import Player
 
@@ -19,19 +21,16 @@ r \ c     0           1           2           3           4           5         
 7   [(r=7, c=0), (r=7, c=1), (r=7, c=2), (r=7, c=3), (r=7, c=4), (r=7, c=5), (r=7, c=6), (r=7, c=7)]
 '''
 
-
 # TODO: Flip the board according to the player
 # TODO: Pawns are usually indicated by no letters
 # TODO: stalemate
 # TODO: move logs - fix king castle boolean update
 # TODO: change move method argument about is_ai into something more elegant
+# i made the init more elegant using numby
 class game_state:
     # Initialize 2D array to represent the chess board
     def __init__(self):
         # The board is a 2D array
-        # TODO: Change to a numpy format later
-        self.white_captives = []
-        self.black_captives = []
         self.move_log = []
         self.white_turn = True
         self.can_en_passant_bool = False
@@ -44,71 +43,33 @@ class game_state:
         self._black_king_location = [7, 3]
 
         self.white_king_can_castle = [True, True,
-                                      True]  # Has king not moved, has Rook1(col=0) not moved, has Rook2(col=7) not moved
+                                      True]  # Has king not moved, has Rook1(col=0) not moved, has Rook2(col=7) not
+        # moved
         self.black_king_can_castle = [True, True, True]
 
-        # Initialize White pieces
-        white_rook_1 = Rook('r', 0, 0, Player.PLAYER_1)
-        white_rook_2 = Rook('r', 0, 7, Player.PLAYER_1)
-        white_knight_1 = Knight('n', 0, 1, Player.PLAYER_1)
-        white_knight_2 = Knight('n', 0, 6, Player.PLAYER_1)
-        white_bishop_1 = Bishop('b', 0, 2, Player.PLAYER_1)
-        white_bishop_2 = Bishop('b', 0, 5, Player.PLAYER_1)
-        white_queen = Queen('q', 0, 4, Player.PLAYER_1)
-        white_king = King('k', 0, 3, Player.PLAYER_1)
-        white_pawn_1 = Pawn('p', 1, 0, Player.PLAYER_1)
-        white_pawn_2 = Pawn('p', 1, 1, Player.PLAYER_1)
-        white_pawn_3 = Pawn('p', 1, 2, Player.PLAYER_1)
-        white_pawn_4 = Pawn('p', 1, 3, Player.PLAYER_1)
-        white_pawn_5 = Pawn('p', 1, 4, Player.PLAYER_1)
-        white_pawn_6 = Pawn('p', 1, 5, Player.PLAYER_1)
-        white_pawn_7 = Pawn('p', 1, 6, Player.PLAYER_1)
-        white_pawn_8 = Pawn('p', 1, 7, Player.PLAYER_1)
-        self.white_pieces = [white_rook_1, white_rook_2, white_knight_1, white_knight_2, white_bishop_1, white_bishop_2,
-                             white_queen, white_king, white_pawn_1, white_pawn_2, white_pawn_3, white_pawn_4,
-                             white_pawn_5,
-                             white_pawn_6, white_pawn_7, white_pawn_8]
+        # Initialize White Pieces
+        self.white_pieces = [
+            Rook('r', 0, 0, Player.PLAYER_1), Knight('n', 0, 1, Player.PLAYER_1),
+            Bishop('b', 0, 2, Player.PLAYER_1), Queen('q', 0, 3, Player.PLAYER_1),
+            King('k', 0, 4, Player.PLAYER_1), Bishop('b', 0, 5, Player.PLAYER_1),
+            Knight('n', 0, 6, Player.PLAYER_1), Rook('r', 0, 7, Player.PLAYER_1)
+        ]
+        self.white_pieces.extend(Pawn('p', 1, i, Player.PLAYER_1) for i in range(8))
 
         # Initialize Black Pieces
-        black_rook_1 = Rook('r', 7, 0, Player.PLAYER_2)
-        black_rook_2 = Rook('r', 7, 7, Player.PLAYER_2)
-        black_knight_1 = Knight('n', 7, 1, Player.PLAYER_2)
-        black_knight_2 = Knight('n', 7, 6, Player.PLAYER_2)
-        black_bishop_1 = Bishop('b', 7, 2, Player.PLAYER_2)
-        black_bishop_2 = Bishop('b', 7, 5, Player.PLAYER_2)
-        black_queen = Queen('q', 7, 4, Player.PLAYER_2)
-        black_king = King('k', 7, 3, Player.PLAYER_2)
-        black_pawn_1 = Pawn('p', 6, 0, Player.PLAYER_2)
-        black_pawn_2 = Pawn('p', 6, 1, Player.PLAYER_2)
-        black_pawn_3 = Pawn('p', 6, 2, Player.PLAYER_2)
-        black_pawn_4 = Pawn('p', 6, 3, Player.PLAYER_2)
-        black_pawn_5 = Pawn('p', 6, 4, Player.PLAYER_2)
-        black_pawn_6 = Pawn('p', 6, 5, Player.PLAYER_2)
-        black_pawn_7 = Pawn('p', 6, 6, Player.PLAYER_2)
-        black_pawn_8 = Pawn('p', 6, 7, Player.PLAYER_2)
-        self.black_pieces = [black_rook_1, black_rook_2, black_knight_1, black_knight_2, black_bishop_1, black_bishop_2,
-                             black_queen, black_king, black_pawn_1, black_pawn_2, black_pawn_3, black_pawn_4,
-                             black_pawn_5,
-                             black_pawn_6, black_pawn_7, black_pawn_8]
-
-        self.board = [
-            [white_rook_1, white_knight_1, white_bishop_1, white_king, white_queen, white_bishop_2, white_knight_2,
-             white_rook_2],
-            [white_pawn_1, white_pawn_2, white_pawn_3, white_pawn_4, white_pawn_5, white_pawn_6, white_pawn_7,
-             white_pawn_8],
-            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
-             Player.EMPTY],
-            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
-             Player.EMPTY],
-            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
-             Player.EMPTY],
-            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
-             Player.EMPTY],
-            [black_pawn_1, black_pawn_2, black_pawn_3, black_pawn_4, black_pawn_5, black_pawn_6, black_pawn_7,
-             black_pawn_8],
-            [black_rook_1, black_knight_1, black_bishop_1, black_king, black_queen, black_bishop_2, black_knight_2,
-             black_rook_2]
+        self.black_pieces = [
+            Rook('r', 7, 0, Player.PLAYER_2), Knight('n', 7, 1, Player.PLAYER_2),
+            Bishop('b', 7, 2, Player.PLAYER_2), Queen('q', 7, 3, Player.PLAYER_2),
+            King('k', 7, 4, Player.PLAYER_2), Bishop('b', 7, 5, Player.PLAYER_2),
+            Knight('n', 7, 6, Player.PLAYER_2), Rook('r', 7, 7, Player.PLAYER_2)
         ]
+        self.black_pieces.extend([Pawn('p', 6, i, Player.PLAYER_2) for i in range(8)])
+
+        # Initialize board with pieces (black and white)
+        self.board = np.full((8, 8), Player.EMPTY, dtype=object)
+        pieces = self.white_pieces + self.black_pieces
+        for piece in pieces:
+            self.board[piece.get_row_number()][piece.get_col_number()] = piece
 
     def get_piece(self, row, col):
         if (0 <= row < 8) and (0 <= col < 8):
@@ -251,18 +212,18 @@ class game_state:
     def king_can_castle_left(self, player):
         if player is Player.PLAYER_1:
             return self.white_king_can_castle[0] and self.white_king_can_castle[1] and \
-                   self.get_piece(0, 1) is Player.EMPTY and self.get_piece(0, 2) is Player.EMPTY and not self._is_check
+                self.get_piece(0, 1) is Player.EMPTY and self.get_piece(0, 2) is Player.EMPTY and not self._is_check
         else:
             return self.black_king_can_castle[0] and self.black_king_can_castle[1] and \
-                   self.get_piece(7, 1) is Player.EMPTY and self.get_piece(7, 2) is Player.EMPTY and not self._is_check
+                self.get_piece(7, 1) is Player.EMPTY and self.get_piece(7, 2) is Player.EMPTY and not self._is_check
 
     def king_can_castle_right(self, player):
         if player is Player.PLAYER_1:
             return self.white_king_can_castle[0] and self.white_king_can_castle[2] and \
-                   self.get_piece(0, 6) is Player.EMPTY and self.get_piece(0, 5) is Player.EMPTY and not self._is_check
+                self.get_piece(0, 6) is Player.EMPTY and self.get_piece(0, 5) is Player.EMPTY and not self._is_check
         else:
             return self.black_king_can_castle[0] and self.black_king_can_castle[2] and \
-                   self.get_piece(7, 6) is Player.EMPTY and self.get_piece(7, 5) is Player.EMPTY and not self._is_check
+                self.get_piece(7, 6) is Player.EMPTY and self.get_piece(7, 5) is Player.EMPTY and not self._is_check
 
     def promote_pawn(self, starting_square, moved_piece, ending_square):
         while True:
@@ -600,14 +561,14 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row,
                                                                                 king_location_col - _left).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row, king_location_col - _left))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
                 else:
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row,
                                                                                 king_location_col - _left).get_valid_piece_takes(
-                            self):
+                        self):
                         # self._is_check = True
                         _checks.append((king_location_row, king_location_col - _left))
                 break
@@ -631,14 +592,14 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row,
                                                                                 king_location_col + _right).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row, king_location_col + _right))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
                 else:
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row,
                                                                                 king_location_col + _right).get_valid_piece_takes(
-                            self):
+                        self):
                         # self._is_check = True
                         _checks.append((king_location_row, king_location_col + _right))
                 break
@@ -662,7 +623,7 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row + _down,
                                                                                 king_location_col).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row + _down, king_location_col))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
@@ -692,14 +653,14 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row - _up,
                                                                                 king_location_col).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row - _up, king_location_col))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
                 else:
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row - _up,
                                                                                 king_location_col).get_valid_piece_takes(
-                            self):
+                        self):
                         # self._is_check = True
                         _checks.append((king_location_row - _up, king_location_col))
                 break
@@ -725,7 +686,7 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row - _up,
                                                                                 king_location_col - _left).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row - _up, king_location_col - _left))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
@@ -759,7 +720,7 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row - _up,
                                                                                 king_location_col + _right).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row - _up, king_location_col + _right))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
@@ -793,7 +754,7 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row + _down,
                                                                                 king_location_col - _left).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row + _down, king_location_col - _left))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp
@@ -827,7 +788,7 @@ class game_state:
                     self.board[_possible_pin[0]][_possible_pin[1]] = Player.EMPTY
                     if (king_location_row, king_location_col) in self.get_piece(king_location_row + _down,
                                                                                 king_location_col + _right).get_valid_piece_takes(
-                            self):
+                        self):
                         _pins.append(_possible_pin)
                         _pins_check.append((king_location_row + _down, king_location_col + _right))
                     self.board[_possible_pin[0]][_possible_pin[1]] = temp

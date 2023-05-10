@@ -9,6 +9,17 @@
 import chess_engine
 from enums import Player
 
+# @added by me
+# instead of using if statements to check for the piece type, using a dictionary to get the value of each piece
+PIECE_VALUES = {
+    "k": {"white": 1000, "black": -1000},
+    "q": {"white": 100, "black": -100},
+    "r": {"white": 50, "black": -50},
+    "b": {"white": 30, "black": -30},
+    "n": {"white": 30, "black": -30},
+    "p": {"white": 10, "black": -10},
+}
+
 
 class chess_ai:
     '''
@@ -16,6 +27,7 @@ class chess_ai:
     evaluate board
     get the value of each piece
     '''
+
     def minimax_white(self, game_state, depth, alpha, beta, maximizing_player, player_color):
         csc = game_state.checkmate_stalemate_checker()
         if maximizing_player:
@@ -139,58 +151,12 @@ class chess_ai:
                     evaluation_score += self.get_piece_value(evaluated_piece, player)
         return evaluation_score
 
+    # make it more efficient by using a dictionary
     def get_piece_value(self, piece, player):
-        if player is Player.PLAYER_1:
-            if piece.is_player("black"):
-                if piece.get_name() is "k":
-                    return -1000
-                elif piece.get_name() is "q":
-                    return -100
-                elif piece.get_name() is "r":
-                    return -50
-                elif piece.get_name() is "b":
-                    return -30
-                elif piece.get_name() is "n":
-                    return -30
-                elif piece.get_name() is "p":
-                    return -10
-            else:
-                if piece.get_name() is "k":
-                    return 1000
-                elif piece.get_name() is "q":
-                    return 100
-                elif piece.get_name() is "r":
-                    return 50
-                elif piece.get_name() is "b":
-                    return 30
-                elif piece.get_name() is "n":
-                    return 30
-                elif piece.get_name() is "p":
-                    return 10
-        else:
-            if piece.is_player("white"):
-                if piece.get_name() is "k":
-                    return 1000
-                elif piece.get_name() is "q":
-                    return 100
-                elif piece.get_name() is "r":
-                    return 50
-                elif piece.get_name() is "b":
-                    return 30
-                elif piece.get_name() is "n":
-                    return 30
-                elif piece.get_name() is "p":
-                    return 10
-            else:
-                if piece.get_name() is "k":
-                    return -1000
-                elif piece.get_name() is "q":
-                    return -100
-                elif piece.get_name() is "r":
-                    return -50
-                elif piece.get_name() is "b":
-                    return -30
-                elif piece.get_name() is "n":
-                    return -30
-                elif piece.get_name() is "p":
-                    return -10
+        player_color = "white" if player == Player.PLAYER_1 else "black"
+        piece_color = "white" if piece.is_player(Player.PLAYER_1) else "black"
+        piece_name = piece.get_name()
+        # fix bug - signs exchanged => for black was negative, for white was positive
+        # now it's the opposite
+        return -PIECE_VALUES[piece_name][piece_color] if piece_color == player_color else PIECE_VALUES[piece_name][
+            piece_color]
