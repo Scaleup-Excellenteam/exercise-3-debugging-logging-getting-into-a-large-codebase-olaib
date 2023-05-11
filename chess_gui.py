@@ -5,12 +5,19 @@
 # Note: The pygame tutorial by Eddie Sharick was used for the GUI engine. The GUI code was altered by Boo Sung Kim to
 # fit in with the rest of the project.
 #
+
 import chess_engine
 import pygame as py
 
 import ai_engine
+from Piece import Piece
 from enums import Player
+import logging as log
 
+# adding logging to the game
+log.basicConfig(filename='game-logs.log', format='%(levelname)s:%(message)s', level=log.INFO)
+
+BLACK = True
 """Variables"""
 WIDTH = HEIGHT = 512  # width and height of the chess board
 DIMENSION = 8  # the dimensions of the chess board
@@ -18,6 +25,8 @@ SQ_SIZE = HEIGHT // DIMENSION  # the size of each of the squares in the board
 MAX_FPS = 15  # FPS for animations
 IMAGES = {}  # images for the chess pieces
 colors = [py.Color("white"), py.Color("gray")]
+end_game, gameOver = False, False
+
 
 # TODO: AI black has been worked on. Mirror progress for other two modes
 def load_images():
@@ -85,6 +94,12 @@ def highlight_square(screen, game_state, valid_moves, square_selected):
                 screen.blit(s, (move[1] * SQ_SIZE, move[0] * SQ_SIZE))
 
 
+def log_pieces_in_game_state(team_pieces: dict, is_black):
+    log.info(
+        f"{'Black' if is_black else 'White'} pieces: {len(team_pieces)} p: {team_pieces['p']} r: {team_pieces['r']}"
+        f" n: {team_pieces['n']} b: {team_pieces['b']} q: {team_pieces['q']} k: {team_pieces['k']}")
+
+
 def main():
     # Check for the number of players and the color of the AI
     human_player = ""
@@ -118,13 +133,16 @@ def main():
     player_clicks = []  # keeps track of player clicks (two tuples)
     valid_moves = []
     game_over = False
+    step = 0
 
     ai = ai_engine.chess_ai()
     game_state = chess_engine.game_state()
     if human_player is 'b':
+        log.info("white starts as AI")
         ai_move = ai.minimax_black(game_state, 3, -100000, 100000, True, Player.PLAYER_1)
         game_state.move_piece(ai_move[0], ai_move[1], True)
-
+    else:
+        log.info("white starts as human")
     while running:
         for e in py.event.get():
             if e.type == py.QUIT:
@@ -144,14 +162,13 @@ def main():
                         # this if is useless right now
                         if (player_clicks[1][0], player_clicks[1][1]) not in valid_moves:
                             square_selected = ()
-                            player_clicks = []
-                            valid_moves = []
+                            player_clicks = valid_moves = []
+
                         else:
                             game_state.move_piece((player_clicks[0][0], player_clicks[0][1]),
                                                   (player_clicks[1][0], player_clicks[1][1]), False)
                             square_selected = ()
-                            player_clicks = []
-                            valid_moves = []
+                            player_clicks = valid_moves = []
 
                             if human_player is 'w':
                                 ai_move = ai.minimax_white(game_state, 3, -100000, 100000, True, Player.PLAYER_2)
@@ -178,19 +195,30 @@ def main():
         draw_game_state(screen, game_state, valid_moves, square_selected)
 
         endgame = game_state.checkmate_stalemate_checker()
+        step += 1
+        end_game = endgame
+
         if endgame == 0:
             game_over = True
             draw_text(screen, "Black wins.")
+            log.info("Black wins.")
         elif endgame == 1:
             game_over = True
             draw_text(screen, "White wins.")
+            log.info("White wins.")
         elif endgame == 2:
             game_over = True
             draw_text(screen, "Stalemate.")
+            log.info("Stalemate.")
 
+        # num of checks
+        if endgame != 3:
+            log.info("Pawns moves: " + str(game_state.pawns_moves))
+            log.info("Checks: " + str(game_state.checks_num))
+            log_pieces_per_step(game_state, step)
+        gameOver = game_over
         clock.tick(MAX_FPS)
         py.display.flip()
-
     # elif human_player is 'w':
     #     ai = ai_engine.chess_ai()
     #     game_state = chess_engine.game_state()
@@ -265,6 +293,30 @@ def draw_text(screen, text):
     text_location = py.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH / 2 - text_object.get_width() / 2,
                                                       HEIGHT / 2 - text_object.get_height() / 2)
     screen.blit(text_object, text_location)
+
+
+def log_pieces_per_step(game_state, step):
+    white_pieces = {
+        "p": False,
+        "r": False,
+        "n": False,
+        "b": False,
+        "q": False,
+        "k": False
+    }
+
+    black_pieces = white_pieces.copy()
+    for row in game_state.board:
+        for piece in row:
+            if isinstance(piece, Piece):
+                if piece.is_player(Player.PLAYER_1):
+                    white_pieces[piece.get_name()] = True
+                elif piece.is_player(Player.PLAYER_2):
+                    black_pieces[piece.get_name().upper()] = True
+
+    log.info(f'Step: {step}\n'
+             f'White: {[key for key, value in white_pieces.items() if value]}\n'
+             f'Black: {[key for key, value in black_pieces.items() if value]}\n')
 
 
 if __name__ == "__main__":

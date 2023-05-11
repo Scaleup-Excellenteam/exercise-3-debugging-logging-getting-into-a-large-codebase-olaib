@@ -4,11 +4,15 @@
 #
 # Note: move log class inspired by Eddie Sharick
 #
-import numpy as np
+from collections import Counter
 
-from Piece import Rook, Knight, Bishop, Queen, King, Pawn
+import numpy as np
+import logging as log
+
+from Piece import Rook, Knight, Bishop, Queen, King, Pawn, Piece
 from enums import Player
 
+PAWN_PIECE = 'p'
 '''
 r \ c     0           1           2           3           4           5           6           7 
 0   [(r=0, c=0), (r=0, c=1), (r=0, c=2), (r=0, c=3), (r=0, c=4), (r=0, c=5), (r=0, c=6), (r=0, c=7)]
@@ -21,6 +25,7 @@ r \ c     0           1           2           3           4           5         
 7   [(r=7, c=0), (r=7, c=1), (r=7, c=2), (r=7, c=3), (r=7, c=4), (r=7, c=5), (r=7, c=6), (r=7, c=7)]
 '''
 
+
 # TODO: Flip the board according to the player
 # TODO: Pawns are usually indicated by no letters
 # TODO: stalemate
@@ -31,13 +36,17 @@ class game_state:
     # Initialize 2D array to represent the chess board
     def __init__(self):
         # The board is a 2D array
+        # adding counter for log of pawns moves
+        self.pawns_moves = 0
         self.move_log = []
         self.white_turn = True
+        self.turns_count = [0, 0]
         self.can_en_passant_bool = False
         self._en_passant_previous = (-1, -1)
         self.checkmate = False
         self.stalemate = False
 
+        self.checks_num = 0
         self._is_check = False
         self._white_king_location = [0, 3]
         self._black_king_location = [7, 3]
@@ -47,29 +56,68 @@ class game_state:
         # moved
         self.black_king_can_castle = [True, True, True]
 
-        # Initialize White Pieces
-        self.white_pieces = [
-            Rook('r', 0, 0, Player.PLAYER_1), Knight('n', 0, 1, Player.PLAYER_1),
-            Bishop('b', 0, 2, Player.PLAYER_1), Queen('q', 0, 3, Player.PLAYER_1),
-            King('k', 0, 4, Player.PLAYER_1), Bishop('b', 0, 5, Player.PLAYER_1),
-            Knight('n', 0, 6, Player.PLAYER_1), Rook('r', 0, 7, Player.PLAYER_1)
-        ]
-        self.white_pieces.extend(Pawn('p', 1, i, Player.PLAYER_1) for i in range(8))
+        # Initialize White pieces
+        white_rook_1 = Rook('r', 0, 0, Player.PLAYER_1)
+        white_rook_2 = Rook('r', 0, 7, Player.PLAYER_1)
+        white_knight_1 = Knight('n', 0, 1, Player.PLAYER_1)
+        white_knight_2 = Knight('n', 0, 6, Player.PLAYER_1)
+        white_bishop_1 = Bishop('b', 0, 2, Player.PLAYER_1)
+        white_bishop_2 = Bishop('b', 0, 5, Player.PLAYER_1)
+        white_queen = Queen('q', 0, 4, Player.PLAYER_1)
+        white_king = King('k', 0, 3, Player.PLAYER_1)
+        white_pawn_1 = Pawn('p', 1, 0, Player.PLAYER_1)
+        white_pawn_2 = Pawn('p', 1, 1, Player.PLAYER_1)
+        white_pawn_3 = Pawn('p', 1, 2, Player.PLAYER_1)
+        white_pawn_4 = Pawn('p', 1, 3, Player.PLAYER_1)
+        white_pawn_5 = Pawn('p', 1, 4, Player.PLAYER_1)
+        white_pawn_6 = Pawn('p', 1, 5, Player.PLAYER_1)
+        white_pawn_7 = Pawn('p', 1, 6, Player.PLAYER_1)
+        white_pawn_8 = Pawn('p', 1, 7, Player.PLAYER_1)
+        self.white_pieces = [white_rook_1, white_rook_2, white_knight_1, white_knight_2, white_bishop_1, white_bishop_2,
+                             white_queen, white_king, white_pawn_1, white_pawn_2, white_pawn_3, white_pawn_4,
+                             white_pawn_5,
+                             white_pawn_6, white_pawn_7, white_pawn_8]
 
         # Initialize Black Pieces
-        self.black_pieces = [
-            Rook('r', 7, 0, Player.PLAYER_2), Knight('n', 7, 1, Player.PLAYER_2),
-            Bishop('b', 7, 2, Player.PLAYER_2), Queen('q', 7, 3, Player.PLAYER_2),
-            King('k', 7, 4, Player.PLAYER_2), Bishop('b', 7, 5, Player.PLAYER_2),
-            Knight('n', 7, 6, Player.PLAYER_2), Rook('r', 7, 7, Player.PLAYER_2)
-        ]
-        self.black_pieces.extend([Pawn('p', 6, i, Player.PLAYER_2) for i in range(8)])
+        black_rook_1 = Rook('r', 7, 0, Player.PLAYER_2)
+        black_rook_2 = Rook('r', 7, 7, Player.PLAYER_2)
+        black_knight_1 = Knight('n', 7, 1, Player.PLAYER_2)
+        black_knight_2 = Knight('n', 7, 6, Player.PLAYER_2)
+        black_bishop_1 = Bishop('b', 7, 2, Player.PLAYER_2)
+        black_bishop_2 = Bishop('b', 7, 5, Player.PLAYER_2)
+        black_queen = Queen('q', 7, 4, Player.PLAYER_2)
+        black_king = King('k', 7, 3, Player.PLAYER_2)
+        black_pawn_1 = Pawn('p', 6, 0, Player.PLAYER_2)
+        black_pawn_2 = Pawn('p', 6, 1, Player.PLAYER_2)
+        black_pawn_3 = Pawn('p', 6, 2, Player.PLAYER_2)
+        black_pawn_4 = Pawn('p', 6, 3, Player.PLAYER_2)
+        black_pawn_5 = Pawn('p', 6, 4, Player.PLAYER_2)
+        black_pawn_6 = Pawn('p', 6, 5, Player.PLAYER_2)
+        black_pawn_7 = Pawn('p', 6, 6, Player.PLAYER_2)
+        black_pawn_8 = Pawn('p', 6, 7, Player.PLAYER_2)
+        self.black_pieces = [black_rook_1, black_rook_2, black_knight_1, black_knight_2, black_bishop_1, black_bishop_2,
+                             black_queen, black_king, black_pawn_1, black_pawn_2, black_pawn_3, black_pawn_4,
+                             black_pawn_5,
+                             black_pawn_6, black_pawn_7, black_pawn_8]
 
-        # Initialize board with pieces (black and white)
-        self.board = np.full((8, 8), Player.EMPTY, dtype=object)
-        pieces = self.white_pieces + self.black_pieces
-        for piece in pieces:
-            self.board[piece.get_row_number()][piece.get_col_number()] = piece
+        self.board = [
+            [white_rook_1, white_knight_1, white_bishop_1, white_king, white_queen, white_bishop_2, white_knight_2,
+             white_rook_2],
+            [white_pawn_1, white_pawn_2, white_pawn_3, white_pawn_4, white_pawn_5, white_pawn_6, white_pawn_7,
+             white_pawn_8],
+            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
+             Player.EMPTY],
+            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
+             Player.EMPTY],
+            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
+             Player.EMPTY],
+            [Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY, Player.EMPTY,
+             Player.EMPTY],
+            [black_pawn_1, black_pawn_2, black_pawn_3, black_pawn_4, black_pawn_5, black_pawn_6, black_pawn_7,
+             black_pawn_8],
+            [black_rook_1, black_knight_1, black_bishop_1, black_king, black_queen, black_bishop_2, black_knight_2,
+             black_rook_2]
+        ]
 
     def get_piece(self, row, col):
         if (0 <= row < 8) and (0 <= col < 8):
@@ -127,6 +175,9 @@ class game_state:
                             self.board[move[0]][move[1]] = moving_piece
                             self.board[current_row][current_col] = Player.EMPTY
                             if self.check_for_check(king_location, moving_piece.get_player())[0]:
+                                # count checks in game
+                                if can_move is True:
+                                    self.checks_num += 1
                                 can_move = False
                             self.board[current_row][current_col] = moving_piece
                             self.board[move[0]][move[1]] = temp
@@ -187,6 +238,7 @@ class game_state:
             print("black lost")
             return 1
         elif not all_white_moves and not all_black_moves:
+            print("stalemate")
             return 2
         else:
             return 3
@@ -269,6 +321,8 @@ class game_state:
 
     # Move a piece
     def move_piece(self, starting_square, ending_square, is_ai):
+        # how much pawn moved
+
         current_square_row = starting_square[0]  # The integer row value of the starting square
         current_square_col = starting_square[1]  # The integer col value of the starting square
         next_square_row = ending_square[0]  # The integer row value of the ending square
@@ -425,8 +479,13 @@ class game_state:
                     self.board[next_square_row][next_square_col] = self.board[current_square_row][current_square_col]
                     self.board[current_square_row][current_square_col] = Player.EMPTY
 
+                # if self.board[current_square_row][current_square_col].get_name() == PAWN_PIECE:
+                #     self.pawns_moves += 1
+
                 self.white_turn = not self.white_turn
 
+                # logging the pieces on the board
+                # self.count_pieces_log()
             else:
                 pass
 
