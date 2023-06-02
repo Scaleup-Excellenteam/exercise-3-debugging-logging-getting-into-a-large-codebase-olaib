@@ -9,7 +9,6 @@
 import chess_engine
 from enums import Player
 
-# for return values of pieces (get_piece_value function)
 VALUES = {
     "k": 1000,
     "q": 100,
