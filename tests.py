@@ -10,6 +10,7 @@ from enums import Player
 from Piece import Knight, Pawn, Piece, Bishop, Rook
 
 logging.basicConfig(level=logging.DEBUG)
+WHITE_WON = 1
 
 
 def game_with_empty_board() -> Game:
@@ -171,9 +172,7 @@ class Test_game_integration(unittest.TestCase):
 
 class SystemTest(unittest.TestCase):
     """System tests for the chess game"""
-
     def test_fools_mate(self):
-        logging.basicConfig(level=logging.DEBUG)  # Enable debug logging
         """Test case for fool's mate
         in this case the game should end with white winning"""
         game = Game()
@@ -184,13 +183,12 @@ class SystemTest(unittest.TestCase):
             game.move_piece((6, 6), (4, 5), False)
             game.move_piece((0, 5), (4, 1), False)
             # Player 1 wins - white
-            mock_checkmate_stalemate_checker.return_value = 1
+            mock_checkmate_stalemate_checker.return_value = WHITE_WON
 
-            # Call the checkmate_stalemate_checker() method
             whose_won = game.checkmate_stalemate_checker()
 
-            # Assert the result
-            self.assertEqual(whose_won, 1)
+            self.assertEqual(whose_won, WHITE_WON)
 
-            # Assert that the checkmate_stalemate_checker() method was called
             mock_checkmate_stalemate_checker.assert_called_once()
+
+#
