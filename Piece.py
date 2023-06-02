@@ -162,8 +162,7 @@ class Knight(Piece):
         _moves = []
         row_change = [-2, -2, -1, -1, +1, +1, +2, +2]
         col_change = [-1, +1, -2, +2, -2, +2, +1, -1]
-
-        # fix bug change to 8 instead of 6
+        # Fix bug - change from 6 to 8
         for i in range(0, 8):
             new_row = self.get_row_number() + row_change[i]
             new_col = self.get_col_number() + col_change[i]
@@ -171,7 +170,6 @@ class Knight(Piece):
             # when the square with new_row and new_col contains a valid piece and the player is different
             if game_state.is_valid_piece(new_row, new_col) and self.get_player() is not evaluating_square.get_player():
                 _moves.append((new_row, new_col))
-
         return _moves
 
     def get_valid_piece_moves(self, game_state):

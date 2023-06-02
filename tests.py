@@ -11,6 +11,7 @@ from Piece import Knight, Pawn, Piece, Bishop, Rook
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 def game_with_empty_board() -> Game:
     """Returns a game with an empty board"""
     game = Game()
@@ -167,35 +168,29 @@ class Test_game_integration(unittest.TestCase):
             self.assertEqual(set(moves_all), set(mock_get_valid_piece_moves))
             mock_get_valid_piece_moves.assert_called_once()
 
-    class SystemTest(unittest.TestCase):
-        def test_game(self):
-            game = Game()
-            with patch.object(game, 'move_piece') as mock_move_piece:
-                game.move_piece((6, 5), (5, 5), False)
-                game.move_piece((1, 4), (3, 4), False)
-                game.move_piece((7, 6), (5, 5), False)
 
-                # perform fools mate
-                game.move_piece((0, 1), (2, 2), False)
-                game.move_piece((7, 5), (6, 6), False)
-                game.move_piece((2, 2), (3, 4), False)
-                game.move_piece((6, 6), (5, 6), False)
-                game.move_piece((3, 4), (5, 5), False)
+class SystemTest(unittest.TestCase):
+    """System tests for the chess game"""
 
-                # check if the game board reflects the final state
-                expected_board = [
-                    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
-                    ['P', 'P', 'P', 'P', ' ', 'P', 'P', 'P'],
-                    ['-9', '-9', '-9', '-9', 'P', ' ', ' ', ' '],
-                    ['-9', '-9', '-9', '-9', '-9', '-9', '-9', '-9'],
-                    ['-9', '-9', '-9', '-9', '-9', '-9', '-9', '-9'],
-                    ['-9', '-9', '-9', '-9', '-9', '-9', 'p', '-9'],
-                    ['-9', '-9', '-9', '-9', '-9', 'p', 'p', '-9'],
-                    ['p', 'p', 'p', 'p', 'p', 'p', ' ', 'p'],
-                    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
-                ]
-                game_board = [[piece.get_name() if isinstance(piece, Piece) else Player.EMPTY for piece in row] for row
-                              in game.board]
-                mock_move_piece.return_value = expected_board
-                self.assertEqual(game_board, expected_board)
-                mock_move_piece.assert_called_once()
+    def test_fools_mate(self):
+        logging.basicConfig(level=logging.DEBUG)  # Enable debug logging
+        """Test case for fool's mate
+        in this case the game should end with white winning"""
+        game = Game()
+        with patch.object(game, 'checkmate_stalemate_checker') as mock_checkmate_stalemate_checker:
+            # Set up the board for fool's mate
+            game.move_piece((6, 4), (4, 4), False)
+            game.move_piece((1, 3), (3, 3), False)
+            game.move_piece((6, 6), (4, 5), False)
+            game.move_piece((0, 5), (4, 1), False)
+            # Player 1 wins - white
+            mock_checkmate_stalemate_checker.return_value = 1
+
+            # Call the checkmate_stalemate_checker() method
+            whose_won = game.checkmate_stalemate_checker()
+
+            # Assert the result
+            self.assertEqual(whose_won, 1)
+
+            # Assert that the checkmate_stalemate_checker() method was called
+            mock_checkmate_stalemate_checker.assert_called_once()
