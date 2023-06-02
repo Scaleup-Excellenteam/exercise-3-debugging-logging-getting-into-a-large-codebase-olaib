@@ -173,7 +173,6 @@ class SystemTest(unittest.TestCase):
     """System tests for the chess game"""
 
     def test_fools_mate(self):
-        logging.basicConfig(level=logging.DEBUG)  # Enable debug logging
         """Test case for fool's mate
         in this case the game should end with white winning"""
         game = Game()
@@ -186,11 +185,8 @@ class SystemTest(unittest.TestCase):
             # Player 1 wins - white
             mock_checkmate_stalemate_checker.return_value = 1
 
-            # Call the checkmate_stalemate_checker() method
             whose_won = game.checkmate_stalemate_checker()
 
-            # Assert the result
             self.assertEqual(whose_won, 1)
 
-            # Assert that the checkmate_stalemate_checker() method was called
             mock_checkmate_stalemate_checker.assert_called_once()
